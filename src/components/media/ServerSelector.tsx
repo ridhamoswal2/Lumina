@@ -37,19 +37,20 @@ const ServerSelector: React.FC<ServerSelectorProps> = ({
       id: 1,
       getUrl: () => {
         if (mediaType === "movie") {
-          return `https://vidora.su/movie/${item.id}`;
+          return `https://player.videasy.net/movie/${item.id}`;
         } else {
-          return `https://vidora.su/tv/${item.id}/${season}/${episode}`;
+          return `https://player.videasy.net/tv/${item.id}/${season}/${episode}?nextEpisode=true&episodeSelector=true`;
         }
       },
     },
+    
     {
       id: 2,
       getUrl: () => {
         if (mediaType === "movie") {
-          return `https://player.videasy.net/movie/${item.id}`;
+          return `https://vidsrc.xyz/embed/movie/${item.id}`;
         } else {
-          return `https://player.videasy.net/tv/${item.id}/${season}/${episode}?nextEpisode=true&episodeSelector=true`;
+          return `https://vidsrc.xyz/embed/tv/${item.id}/${season}/${episode}`;
         }
       },
     },
@@ -57,9 +58,9 @@ const ServerSelector: React.FC<ServerSelectorProps> = ({
       id: 3,
       getUrl: () => {
         if (mediaType === "movie") {
-          return `https://player.autoembed.cc/embed/movie/${item.id}`;
+          return `https://vidfast.pro/movie/${item.id}?autoPlay=true`;
         } else {
-          return `https://player.autoembed.cc/embed/tv/${item.id}/${season}/${episode}`;
+          return `https://vidfast.pro/tv/${item.id}/${season}/${episode}?autoPlay=true`;
         }
       },
     },
@@ -67,12 +68,23 @@ const ServerSelector: React.FC<ServerSelectorProps> = ({
       id: 4,
       getUrl: () => {
         if (mediaType === "movie") {
-          return `https://vidlink.pro/movie/${item.id}`;
+          return `https://anyembed.xyz/movie/${item.id}?server=${3}`;
         } else {
-          return `https://vidlink.pro/tv/${item.id}/${season}/${episode}`;
+          return `https://anyembed.xyz/tv/${item.id}/${season}/${episode}?server=${4}`;
         }
       },
     },
+    {
+      id: 5,
+      getUrl: () => {
+        if (mediaType === "movie") {
+          return `https://www.2embed.stream/embed/movie/${item.id}`;
+        } else {
+          return `https://vidsrc.me/embed/tv/${item.id}/${season}/${episode}?server=${4}`;
+        }
+      },
+    },
+    
   ];
 
   const handleServerSelect = (server: typeof servers[0]) => {
