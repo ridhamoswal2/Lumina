@@ -1,4 +1,3 @@
-
 const API_KEY = "08c748f7d51cbcbf3189168114145568";
 const BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
@@ -75,6 +74,23 @@ const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string
   return response.json();
 };
 
+// Utility function for handling API requests with retries
+const fetchWithRetry = async (url: string, retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      // Wait before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+    }
+  }
+};
+
 // Get image URL with specified size
 export const getImageUrl = (path: string | null, size: string = "original"): string | null => {
   if (!path) return null;
@@ -118,8 +134,30 @@ export const getRecommendations = async (mediaType: MediaType, id: number) => {
 };
 
 // Get genres
-export const getGenres = async (mediaType: MediaType) => {
-  return fetchFromTMDB<{ genres: Genre[] }>(`/genre/${mediaType}/list`);
+export const getGenres = async (type: MediaType) => {
+  try {
+    const url = `${BASE_URL}/genre/${type}/list?api_key=${API_KEY}&language=en-US`;
+    return await fetchWithRetry(url);
+  } catch (error) {
+    console.error(`Error fetching ${type} genres:`, error);
+    throw error;
+  }
+};
+
+// Add timeout to all fetch requests
+const fetchWithTimeout = async (url: string, timeout = 5000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(id);
+  }
 };
 
 // Get media by genre

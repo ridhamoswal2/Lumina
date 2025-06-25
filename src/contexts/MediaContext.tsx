@@ -25,18 +25,39 @@ export const MediaProvider = ({ children }: { children: ReactNode }) => {
   React.useEffect(() => {
     const fetchAllGenres = async () => {
       try {
+        setLoadingGenres(true);
+        
+        // Try to get genres from localStorage first
+        const cachedGenres = localStorage.getItem('genres');
+        if (cachedGenres) {
+          const parsedGenres = JSON.parse(cachedGenres);
+          setGenres(parsedGenres);
+          setLoadingGenres(false);
+        }
+        
+        // Fetch fresh data regardless of cache
         const [movieGenres, tvGenres] = await Promise.all([
           getGenres("movie"),
           getGenres("tv")
         ]);
         
-        setGenres({
+        const newGenres = {
           movie: movieGenres.genres,
           tv: tvGenres.genres
-        });
+        };
+        
+        // Update state and cache
+        setGenres(newGenres);
+        localStorage.setItem('genres', JSON.stringify(newGenres));
       } catch (error) {
         console.error("Error fetching genres:", error);
-        toast.error("Failed to load genres");
+        toast.error("Failed to load genres. Please refresh the page.");
+        
+        // Try to use cached data if available
+        const cachedGenres = localStorage.getItem('genres');
+        if (cachedGenres) {
+          setGenres(JSON.parse(cachedGenres));
+        }
       } finally {
         setLoadingGenres(false);
       }

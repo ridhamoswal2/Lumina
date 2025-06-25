@@ -47,7 +47,7 @@ const TVShowsPage: React.FC = () => {
   }, [selectedGenre]);
 
   return (
-    <div className="pt-24 pb-16">
+    <div className="pt-20 pb-16">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold mb-6">TV Shows</h1>
         
