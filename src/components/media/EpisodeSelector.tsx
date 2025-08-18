@@ -81,7 +81,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   if (seasons.length === 0) return null;
 
   return (
-    <div className="space-y-6">
+    <div id="episodes-section" className="space-y-6">
       <div className="flex items-center gap-4">
         <h2 className="text-2xl font-semibold">Episodes</h2>
         <Select value={selectedSeason.toString()} onValueChange={handleSeasonChange}>
