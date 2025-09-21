@@ -58,7 +58,9 @@ const MediaCard: React.FC<MediaCardProps> = ({
             <div className="flex items-center justify-between mb-1 md:mb-2">
               <div className="flex items-center">
                 <Star className="h-3 w-3 md:h-4 md:w-4 text-yellow-400 mr-1" />
-                <span className="text-xs md:text-sm">{item.vote_average.toFixed(1)}</span>
+                <span className="text-xs md:text-sm">
+                  {(item.vote_average != null ? item.vote_average : 0).toFixed(1)}
+                </span>
               </div>
               <button 
                 onClick={handleWatchlistToggle} 
