@@ -9,6 +9,7 @@ import {
 import MediaGrid from "@/components/media/MediaGrid";
 import GenreFilter from "@/components/layout/GenreFilter";
 import { toast } from "sonner";
+import { handleError } from "@/utils/errorHandler";
 
 const TVShowsPage: React.FC = () => {
   const [shows, setShows] = useState<MediaItem[]>([]);
@@ -36,8 +37,7 @@ const TVShowsPage: React.FC = () => {
         
         setShows(showsWithType);
       } catch (error) {
-        console.error("Error fetching TV shows:", error);
-        toast.error("Failed to load TV shows");
+        handleError(error, "Failed to load TV shows");
       } finally {
         setLoading(false);
       }

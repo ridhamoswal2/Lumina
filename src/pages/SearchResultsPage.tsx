@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { searchMedia, MediaItem } from "@/services/tmdb";
 import MediaGrid from "@/components/media/MediaGrid";
 import { toast } from "sonner";
+import { handleError } from "@/utils/errorHandler";
 
 const SearchResultsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,8 +47,7 @@ const SearchResultsPage: React.FC = () => {
         setTotalResults(data.total_results);
         setTotalPages(data.total_pages);
       } catch (error) {
-        console.error("Search error:", error);
-        toast.error("Failed to load search results");
+        handleError(error, "Failed to load search results");
       } finally {
         setLoading(false);
       }

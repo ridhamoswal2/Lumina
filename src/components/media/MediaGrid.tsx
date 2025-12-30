@@ -2,6 +2,7 @@
 import React from "react";
 import { MediaItem } from "@/services/tmdb";
 import MediaCard from "./MediaCard";
+import MediaGridSkeleton from "./MediaGridSkeleton";
 
 interface MediaGridProps {
   items: MediaItem[];
@@ -17,9 +18,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({
   return (
     <div className="w-full">
       {loading ? (
-        <div className="flex justify-center py-12 md:py-20">
-          <div className="animate-spin h-8 w-8 md:h-10 md:w-10 border-2 border-primary border-t-transparent rounded-full" />
-        </div>
+        <MediaGridSkeleton />
       ) : items.length === 0 ? (
         <div className="text-center py-12 md:py-20">
           <p className="text-muted-foreground">{emptyMessage}</p>

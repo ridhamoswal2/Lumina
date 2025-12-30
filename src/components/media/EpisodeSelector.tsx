@@ -9,7 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getImageUrl } from "@/services/tmdb";
+import { getImageUrl, getSeasonDetails } from "@/services/tmdb";
+import LazyImage from "@/components/ui/LazyImage";
+import { handleError } from "@/utils/errorHandler";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Episode {
   id: number;
@@ -48,13 +51,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   const fetchSeasonDetails = async (seasonNumber: number) => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://api.themoviedb.org/3/tv/${tvShowId}/season/${seasonNumber}?api_key=08c748f7d51cbcbf3189168114145568`
-      );
-      const data = await response.json();
+      const data = await getSeasonDetails(tvShowId, seasonNumber);
       setEpisodes(data.episodes || []);
     } catch (error) {
-      console.error("Error fetching season details:", error);
+      handleError(error, "Failed to load season episodes");
       setEpisodes([]);
     } finally {
       setLoading(false);
@@ -99,8 +99,21 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="glass-morphism rounded-lg overflow-hidden"
+            >
+              <Skeleton className="aspect-video w-full" />
+              <div className="p-4">
+                <Skeleton className="h-5 w-3/4 mb-2 rounded" />
+                <Skeleton className="h-4 w-full mb-1 rounded" />
+                <Skeleton className="h-4 w-5/6 rounded" />
+                <Skeleton className="h-3 w-24 mt-2 rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -111,12 +124,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
               onClick={() => handleEpisodeClick(episode.episode_number)}
             >
               <div className="relative aspect-video">
-                <img
-                  src={
-                    getImageUrl(episode.still_path, "w500") ||
-                    "/placeholder.svg"
-                  }
+                <LazyImage
+                  src={getImageUrl(episode.still_path, "w500")}
                   alt={episode.name}
+                  aspectRatio="16/9"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">

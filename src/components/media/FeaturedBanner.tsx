@@ -5,6 +5,7 @@ import { MediaItem, getImageUrl, MediaType } from "@/services/tmdb";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import LazyImage from "@/components/ui/LazyImage";
 
 interface FeaturedBannerProps {
   item: MediaItem;
@@ -29,9 +30,9 @@ const FeaturedBanner: React.FC<FeaturedBannerProps> = ({ item }) => {
     )}>
       {/* Background image */}
       <div className="absolute inset-0">
-        <img
-          src={getImageUrl(item.backdrop_path, "original") || getImageUrl(item.poster_path, "original") || "/placeholder.svg"}
-          alt={item.title || item.name}
+        <LazyImage
+          src={getImageUrl(item.backdrop_path, "original") || getImageUrl(item.poster_path, "original")}
+          alt={item.title || item.name || "Featured media"}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/10" />
@@ -44,19 +45,19 @@ const FeaturedBanner: React.FC<FeaturedBannerProps> = ({ item }) => {
       )}>
         <div className={cn("max-w-2xl", isMobile && "max-w-full")}>
           <h1 className={cn(
-            "font-bold mb-2 animate-fade-in",
-            isMobile ? "text-2xl" : "text-3xl md:text-4xl lg:text-6xl md:mb-3"
+            "font-bold mb-2 animate-fade-in break-words",
+            isMobile ? "text-2xl leading-tight" : "text-3xl md:text-4xl lg:text-6xl md:mb-3 leading-tight"
           )}>
             {item.title || item.name}
           </h1>
           
           <div className={cn(
-            "flex items-center mb-2 animate-fade-in",
-            isMobile ? "space-x-2 text-sm" : "space-x-3 md:space-x-4 md:mb-4"
+            "flex items-center mb-2 animate-fade-in flex-wrap gap-2",
+            isMobile ? "text-sm" : "text-sm md:text-base md:mb-4"
           )} style={{ animationDelay: "0.2s" }}>
-            {year && <span className={isMobile ? "text-sm" : "text-sm md:text-base"}>{year}</span>}
+            {year && <span className="whitespace-nowrap">{year}</span>}
             {item.vote_average > 0 && (
-              <span className="flex items-center">
+              <span className="flex items-center whitespace-nowrap">
                 <span className="text-yellow-400">★</span>
                 <span className="ml-1">{item.vote_average.toFixed(1)}</span>
               </span>
@@ -64,8 +65,8 @@ const FeaturedBanner: React.FC<FeaturedBannerProps> = ({ item }) => {
           </div>
           
           <p className={cn(
-            "opacity-90 mb-3 animate-fade-in line-clamp-2",
-            isMobile ? "text-xs md:mb-4" : "text-xs md:text-sm lg:text-base md:line-clamp-3 md:mb-6"
+            "opacity-90 mb-3 animate-fade-in line-clamp-2 break-words",
+            isMobile ? "text-xs md:mb-4 leading-relaxed" : "text-xs md:text-sm lg:text-base md:line-clamp-3 md:mb-6 leading-relaxed"
           )} style={{ animationDelay: "0.3s" }}>
             {item.overview}
           </p>

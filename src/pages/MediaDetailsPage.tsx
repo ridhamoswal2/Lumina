@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { 
   getMediaDetails, 
   getRecommendations, 
+  getTVShowDetails,
   DetailedMediaItem, 
   MediaItem, 
   MediaType 
@@ -12,7 +13,11 @@ import MediaHero from "@/components/media/MediaHero";
 import MediaRow from "@/components/media/MediaRow";
 import EpisodeSelector from "@/components/media/EpisodeSelector";
 import ServerSelector from "@/components/media/ServerSelector";
+import MediaDetailsPageSkeleton from "@/components/media/MediaDetailsPageSkeleton";
+import LazyImage from "@/components/ui/LazyImage";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { handleError } from "@/utils/errorHandler";
 
 const MediaDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,15 +52,16 @@ const MediaDetailsPage: React.FC = () => {
 
         // Fetch seasons for TV shows
         if (mediaType === "tv") {
-          const seasonsResponse = await fetch(
-            `https://api.themoviedb.org/3/tv/${id}?api_key=08c748f7d51cbcbf3189168114145568`
-          );
-          const seasonsData = await seasonsResponse.json();
-          setSeasons(seasonsData.seasons || []);
+          try {
+            const seasonsData = await getTVShowDetails(parseInt(id));
+            setSeasons(seasonsData.seasons || []);
+          } catch (error) {
+            console.error("Error fetching seasons:", error);
+            setSeasons([]);
+          }
         }
       } catch (error) {
-        console.error("Error fetching media details:", error);
-        toast.error("Failed to load content details");
+        handleError(error, "Failed to load media details");
       } finally {
         setLoading(false);
       }
@@ -87,11 +93,7 @@ const MediaDetailsPage: React.FC = () => {
   };
 
   if (loading || !item) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-12 w-12 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    return <MediaDetailsPageSkeleton />;
   }
 
   return (
@@ -133,26 +135,38 @@ const MediaDetailsPage: React.FC = () => {
             {item.credits?.cast && item.credits.cast.length > 0 && (
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Cast</h2>
-                <div className="flex flex-wrap gap-4">
-                  {item.credits.cast.slice(0, 6).map((person) => (
-                    <div key={person.id} className="text-center">
-                      <div className="w-24 h-24 rounded-full overflow-hidden glass-morphism mb-2">
-                        {person.profile_path ? (
-                          <img 
-                            src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
-                            alt={person.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-muted flex items-center justify-center">
-                            <span className="text-xs text-muted-foreground">No image</span>
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="text-sm font-medium">{person.name}</h3>
-                      <p className="text-xs text-muted-foreground">{person.character}</p>
-                    </div>
-                  ))}
+                <div className="relative overflow-hidden">
+                  <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-none snap-x">
+                    {item.credits.cast.map((person) => (
+                      <Link
+                        key={person.id}
+                        to={`/person/${person.id}`}
+                        className="flex-none snap-start text-center group cursor-pointer transition-all duration-300 hover:scale-105"
+                        style={{ minWidth: '96px', maxWidth: '96px' }}
+                      >
+                        <div className="w-24 h-24 rounded-full overflow-hidden glass-morphism mb-2 group-hover:ring-2 group-hover:ring-primary transition-all mx-auto">
+                          {person.profile_path ? (
+                            <LazyImage
+                              src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                              alt={person.name}
+                              aspectRatio="1/1"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">No image</span>
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="text-sm font-medium group-hover:text-primary transition-colors truncate px-1 min-h-[1.5rem] flex items-center justify-center">
+                          <span className="truncate w-full text-center">{person.name}</span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground truncate px-1 min-h-[1rem] mt-0.5">
+                          <span className="truncate w-full block text-center">{person.character}</span>
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

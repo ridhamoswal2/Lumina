@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Search, Film, Tv, ArrowRight } from "lucide-react";
+import { X, Search, Film, Tv } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
 import { searchMedia, MediaItem, getImageUrl } from "@/services/tmdb";
+import LazyImage from "@/components/ui/LazyImage";
 
 interface SearchBarProps {
   isOpen: boolean;
@@ -52,11 +52,24 @@ const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose }) => {
       if (query.length > 2) {
         setLoading(true);
         try {
-          const data = await searchMedia(query);
-          setResults(data.results.filter(item => 
-            (item.media_type === "movie" || item.media_type === "tv") && 
-            (item.poster_path || item.backdrop_path)
-          ).slice(0, 8));
+          // Fetch all pages of results
+          let allResults: MediaItem[] = [];
+          let page = 1;
+          let hasMore = true;
+          
+          while (hasMore && page <= 5) { // Limit to 5 pages to avoid too many requests
+            const data = await searchMedia(query, page);
+            const filtered = data.results.filter(item => 
+              (item.media_type === "movie" || item.media_type === "tv") && 
+              (item.poster_path || item.backdrop_path)
+            );
+            allResults = [...allResults, ...filtered];
+            
+            hasMore = page < data.total_pages && filtered.length > 0;
+            page++;
+          }
+          
+          setResults(allResults);
         } catch (error) {
           console.error("Search error:", error);
         } finally {
@@ -69,11 +82,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose }) => {
 
     return () => clearTimeout(searchTimeout);
   }, [query]);
-
-  const handleViewAll = () => {
-    navigate(`/search?q=${encodeURIComponent(query)}`);
-    onClose();
-  };
 
   const handleItemClick = (item: MediaItem) => {
     navigate(`/${item.media_type}/${item.id}`);
@@ -115,7 +123,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose }) => {
             <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+          <div className="max-w-6xl mx-auto max-h-[70vh] overflow-y-auto scrollbar-none">
             {query.length > 0 && (
               <div className="mb-4">
                 {results.length === 0 ? (
@@ -125,51 +133,38 @@ const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose }) => {
                       : "No results found"}
                   </p>
                 ) : (
-                  <>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {results.map((item) => (
-                        <div 
-                          key={`${item.media_type}-${item.id}`}
-                          onClick={() => handleItemClick(item)}
-                          className="glass-morphism rounded-lg overflow-hidden card-hover cursor-pointer bg-white/5 backdrop-blur-xl border border-white/10"
-                        >
-                          <div className="aspect-[2/3] relative">
-                            <img 
-                              src={getImageUrl(item.poster_path || item.backdrop_path, "w500") || "/placeholder.svg"} 
-                              alt={item.title || item.name}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute top-2 right-2 glass-morphism rounded-full px-2 py-1 text-xs flex items-center bg-black/50 backdrop-blur-sm">
-                              {item.media_type === "movie" 
-                                ? <Film className="h-3 w-3 mr-1" /> 
-                                : <Tv className="h-3 w-3 mr-1" />}
-                              {item.media_type === "movie" ? "Movie" : "TV"}
-                            </div>
-                          </div>
-                          <div className="p-3">
-                            <h3 className="font-semibold text-sm truncate">
-                              {item.title || item.name}
-                            </h3>
-                            <p className="text-xs text-muted-foreground">
-                              {item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || "Unknown"}
-                            </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {results.map((item) => (
+                      <div 
+                        key={`${item.media_type}-${item.id}`}
+                        onClick={() => handleItemClick(item)}
+                        className="glass-morphism rounded-lg overflow-hidden cursor-pointer bg-white/5 backdrop-blur-xl border border-white/10 transition-transform duration-300 hover:scale-[1.02] hover:-translate-y-1 group"
+                      >
+                        <div className="aspect-[2/3] relative overflow-hidden">
+                          <LazyImage
+                            src={getImageUrl(item.poster_path || item.backdrop_path, "w500")}
+                            alt={item.title || item.name || "Search result"}
+                            aspectRatio="2/3"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 right-2 glass-morphism rounded-full px-2 py-1 text-xs flex items-center bg-black/60 backdrop-blur-sm z-10">
+                            {item.media_type === "movie" 
+                              ? <Film className="h-3 w-3 mr-1 flex-shrink-0" /> 
+                              : <Tv className="h-3 w-3 mr-1 flex-shrink-0" />}
+                            <span className="whitespace-nowrap">{item.media_type === "movie" ? "Movie" : "TV"}</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                    
-                    {results.length > 0 && (
-                      <div className="mt-6 text-center">
-                        <button 
-                          onClick={handleViewAll}
-                          className="glass-morphism inline-flex items-center px-4 py-2 rounded-full hover:bg-white/10 transition-colors bg-white/5 backdrop-blur-xl border border-white/10"
-                        >
-                          View all results
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </button>
+                        <div className="p-3 min-h-[60px]">
+                          <h3 className="font-semibold text-sm truncate mb-1 leading-tight min-h-[1.5rem] flex items-center">
+                            <span className="truncate w-full">{item.title || item.name || "Untitled"}</span>
+                          </h3>
+                          <p className="text-xs text-muted-foreground truncate leading-tight min-h-[1rem]">
+                            {item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4) || "Unknown"}
+                          </p>
+                        </div>
                       </div>
-                    )}
-                  </>
+                    ))}
+                  </div>
                 )}
               </div>
             )}

@@ -3,6 +3,7 @@ import React, { useState, useRef } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { MediaItem } from "@/services/tmdb";
 import MediaCard from "./MediaCard";
+import MediaRowSkeleton from "./MediaRowSkeleton";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -88,9 +89,7 @@ const MediaRow: React.FC<MediaRowProps> = ({
         onMouseEnter={checkScrollButtons}
       >
         {loading ? (
-          <div className="flex justify-center py-12 md:py-20">
-            <div className="animate-spin h-8 w-8 md:h-10 md:w-10 border-2 border-primary border-t-transparent rounded-full" />
-          </div>
+          <MediaRowSkeleton title={title} />
         ) : items.length === 0 ? (
           <p className="text-center py-10 md:py-16 text-muted-foreground">{emptyMessage}</p>
         ) : (
@@ -106,6 +105,7 @@ const MediaRow: React.FC<MediaRowProps> = ({
                   "flex-none snap-start",
                   isMobile ? "w-[130px]" : "w-[160px] md:w-[200px]"
                 )}
+                style={{ willChange: 'transform' }}
               >
                 <MediaCard item={item} />
               </div>

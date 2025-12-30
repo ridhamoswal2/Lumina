@@ -6,11 +6,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MediaProvider } from "./contexts/MediaContext";
 import { Suspense } from "react";
 import LoadingScreen from "./components/ui/loading";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/layout/Navbar";
 import HomePage from "./pages/HomePage";
 import MoviesPage from "./pages/MoviesPage";
 import TVShowsPage from "./pages/TVShowsPage";
 import MediaDetailsPage from "./pages/MediaDetailsPage";
+import PersonPage from "./pages/PersonPage";
 import WatchlistPage from "./pages/WatchlistPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
 import NotFound from "./pages/NotFound";
@@ -41,6 +43,7 @@ const AppContent = () => {
           <Route path="/tv" element={<TVShowsPage />} />
           <Route path="/movie/:id" element={<MediaDetailsPage />} />
           <Route path="/tv/:id" element={<MediaDetailsPage />} />
+          <Route path="/person/:id" element={<PersonPage />} />
           <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/search" element={<SearchResultsPage />} />
           <Route path="*" element={<NotFound />} />
@@ -51,17 +54,21 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <MediaProvider>
-        <Suspense fallback={<LoadingScreen />}>
-          <AppContent />
-        </Suspense>
-        <Sonner />
-        <Toaster />
-      </MediaProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <MediaProvider>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingScreen />}>
+              <AppContent />
+            </Suspense>
+          </ErrorBoundary>
+          <Sonner />
+          <Toaster />
+        </MediaProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

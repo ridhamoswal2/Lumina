@@ -75,7 +75,20 @@
   }
 
   .card-hover {
-    @apply transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 hover:shadow-lg;
+    @apply transition-all duration-300 hover:scale-[1.03] hover:shadow-xl;
+    transform-origin: center;
+  }
+  
+  .media-card-container {
+    @apply flex-none;
+    will-change: transform;
+  }
+  
+  /* Prevent text overflow issues */
+  .text-safe {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
   
   .nav-item {

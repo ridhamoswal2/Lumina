@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect } from "react";
 import FeaturedBanner from "@/components/media/FeaturedBanner";
+import FeaturedBannerSkeleton from "@/components/media/FeaturedBannerSkeleton";
 import MediaRow from "@/components/media/MediaRow";
+import MediaRowSkeleton from "@/components/media/MediaRowSkeleton";
 import { 
   getTrending, 
   getPopularMovies, 
@@ -11,6 +13,7 @@ import {
   MediaItem
 } from "@/services/tmdb";
 import { toast } from "sonner";
+import { handleError } from "@/utils/errorHandler";
 
 const HomePage: React.FC = () => {
   const [featuredItem, setFeaturedItem] = useState<MediaItem | null>(null);
@@ -55,8 +58,7 @@ const HomePage: React.FC = () => {
         setTopRatedMovies(topRatedMoviesRes.results);
         setNowPlaying(nowPlayingRes.results);
       } catch (error) {
-        console.error("Error fetching home data:", error);
-        toast.error("Failed to load content");
+        handleError(error, "Failed to load home content");
       } finally {
         setLoading(false);
       }
@@ -69,44 +71,49 @@ const HomePage: React.FC = () => {
     <div>
       {/* Hero section */}
       {loading ? (
-        <div className="min-h-[60vh] md:min-h-[80vh] w-full bg-muted animate-pulse flex items-center justify-center">
-          <div className="animate-spin h-10 w-10 border-2 border-primary border-t-transparent rounded-full" />
-        </div>
+        <FeaturedBannerSkeleton />
       ) : featuredItem && (
         <FeaturedBanner item={featuredItem} />
       )}
 
       {/* Content rows */}
       <div className="container mx-auto px-4 pb-16">
-        <MediaRow 
-          title="Trending Today" 
-          items={trending} 
-          loading={loading} 
-        />
-        
-        <MediaRow 
-          title="Popular Movies" 
-          items={popularMovies} 
-          loading={loading} 
-        />
-        
-        <MediaRow 
-          title="Popular TV Shows" 
-          items={popularTVShows} 
-          loading={loading} 
-        />
-        
-        <MediaRow 
-          title="Top Rated Movies" 
-          items={topRatedMovies} 
-          loading={loading} 
-        />
-        
-        <MediaRow 
-          title="Now Playing" 
-          items={nowPlaying} 
-          loading={loading} 
-        />
+        {loading ? (
+          <>
+            <MediaRowSkeleton title="Trending Today" />
+            <MediaRowSkeleton title="Popular Movies" />
+            <MediaRowSkeleton title="Popular TV Shows" />
+            <MediaRowSkeleton title="Top Rated Movies" />
+            <MediaRowSkeleton title="Now Playing" />
+          </>
+        ) : (
+          <>
+            <MediaRow 
+              title="Trending Today" 
+              items={trending} 
+            />
+            
+            <MediaRow 
+              title="Popular Movies" 
+              items={popularMovies} 
+            />
+            
+            <MediaRow 
+              title="Popular TV Shows" 
+              items={popularTVShows} 
+            />
+            
+            <MediaRow 
+              title="Top Rated Movies" 
+              items={topRatedMovies} 
+            />
+            
+            <MediaRow 
+              title="Now Playing" 
+              items={nowPlaying} 
+            />
+          </>
+        )}
       </div>
     </div>
   );

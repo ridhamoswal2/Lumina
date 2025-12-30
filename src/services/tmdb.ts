@@ -1,6 +1,12 @@
-const API_KEY = "08c748f7d51cbcbf3189168114145568";
+import { TMDBError } from "@/utils/errorHandler";
+
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY || "";
 const BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
+
+if (!API_KEY) {
+  console.warn("VITE_TMDB_API_KEY is not set. Please add it to your .env file.");
+}
 
 export type MediaType = "movie" | "tv";
 
@@ -60,18 +66,65 @@ export interface Genre {
 
 // Helper function to fetch data from the TMDB API
 const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string>): Promise<T> => {
+  if (!API_KEY) {
+    throw new Error("TMDB API key is not configured. Please set VITE_TMDB_API_KEY in your .env file.");
+  }
+
   const queryParams = new URLSearchParams({
     api_key: API_KEY,
     ...params,
   });
 
-  const response = await fetch(`${BASE_URL}${endpoint}?${queryParams}`);
+  try {
+    const response = await fetch(`${BASE_URL}${endpoint}?${queryParams}`);
 
-  if (!response.ok) {
-    throw new Error(`TMDB API Error: ${response.status}`);
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new TMDBError(
+          "Invalid API key. Please check your VITE_TMDB_API_KEY.",
+          response.status,
+          "INVALID_API_KEY"
+        );
+      }
+      if (response.status === 429) {
+        throw new TMDBError(
+          "API rate limit exceeded. Please try again later.",
+          response.status,
+          "RATE_LIMIT_EXCEEDED"
+        );
+      }
+      if (response.status === 404) {
+        throw new TMDBError(
+          "Resource not found.",
+          response.status,
+          "NOT_FOUND"
+        );
+      }
+      throw new TMDBError(
+        `TMDB API Error: ${response.status} - ${response.statusText}`,
+        response.status,
+        "API_ERROR"
+      );
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error instanceof TMDBError) {
+      throw error;
+    }
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      throw new TMDBError(
+        "Network error. Please check your internet connection.",
+        undefined,
+        "NETWORK_ERROR"
+      );
+    }
+    throw new TMDBError(
+      error instanceof Error ? error.message : "Unknown error occurred",
+      undefined,
+      "UNKNOWN_ERROR"
+    );
   }
-
-  return response.json();
 };
 
 // Utility function for handling API requests with retries
@@ -135,30 +188,30 @@ export const getRecommendations = async (mediaType: MediaType, id: number) => {
 
 // Get genres
 export const getGenres = async (type: MediaType) => {
+  if (!API_KEY) {
+    throw new TMDBError(
+      "TMDB API key is not configured. Please set VITE_TMDB_API_KEY in your .env file.",
+      undefined,
+      "MISSING_API_KEY"
+    );
+  }
+  
   try {
     const url = `${BASE_URL}/genre/${type}/list?api_key=${API_KEY}&language=en-US`;
     return await fetchWithRetry(url);
   } catch (error) {
     console.error(`Error fetching ${type} genres:`, error);
-    throw error;
+    if (error instanceof TMDBError) {
+      throw error;
+    }
+    throw new TMDBError(
+      `Failed to fetch ${type} genres`,
+      undefined,
+      "GENRES_FETCH_ERROR"
+    );
   }
 };
 
-// Add timeout to all fetch requests
-const fetchWithTimeout = async (url: string, timeout = 5000) => {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  } finally {
-    clearTimeout(id);
-  }
-};
 
 // Get media by genre
 export const getMediaByGenre = async (mediaType: MediaType, genreId: number, page: number = 1) => {
@@ -186,4 +239,71 @@ export const getUpcomingMovies = async () => {
 // Get on the air TV shows
 export const getOnTheAirTVShows = async () => {
   return fetchFromTMDB<{ results: MediaItem[] }>("/tv/on_the_air");
+};
+
+// Get TV show details with seasons
+export const getTVShowDetails = async (id: number) => {
+  return fetchFromTMDB<{ seasons: Array<{ id: number; season_number: number; name: string; episode_count: number }> }>(`/tv/${id}`);
+};
+
+// Get season details with episodes
+export const getSeasonDetails = async (tvShowId: number, seasonNumber: number) => {
+  return fetchFromTMDB<{ episodes: Array<{
+    id: number;
+    episode_number: number;
+    name: string;
+    overview: string;
+    still_path: string | null;
+    air_date: string;
+    runtime?: number;
+  }> }>(`/tv/${tvShowId}/season/${seasonNumber}`);
+};
+
+// Person/Cast Member interfaces
+export interface Person {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  place_of_birth: string | null;
+  profile_path: string | null;
+  known_for_department: string;
+  popularity: number;
+}
+
+export interface PersonCredits {
+  cast: Array<{
+    id: number;
+    title?: string;
+    name?: string;
+    character: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
+    release_date?: string;
+    first_air_date?: string;
+    vote_average: number;
+    media_type: "movie" | "tv";
+  }>;
+  crew: Array<{
+    id: number;
+    title?: string;
+    name?: string;
+    job: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
+    release_date?: string;
+    first_air_date?: string;
+    vote_average: number;
+    media_type: "movie" | "tv";
+  }>;
+}
+
+// Get person details
+export const getPersonDetails = async (personId: number) => {
+  return fetchFromTMDB<Person>(`/person/${personId}`);
+};
+
+// Get person movie and TV credits
+export const getPersonCredits = async (personId: number) => {
+  return fetchFromTMDB<PersonCredits>(`/person/${personId}/combined_credits`);
 };

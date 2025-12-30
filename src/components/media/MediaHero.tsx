@@ -7,6 +7,7 @@ import { DetailedMediaItem, getImageUrl } from "@/services/tmdb";
 import { useMedia } from "@/contexts/MediaContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ServerSelector from "./ServerSelector";
+import LazyImage from "@/components/ui/LazyImage";
 
 interface MediaHeroProps {
   item: DetailedMediaItem;
@@ -92,12 +93,13 @@ const MediaHero: React.FC<MediaHeroProps> = ({
     <div className="relative min-h-[80vh] md:min-h-screen flex items-end overflow-hidden">
       {/* Background image with gradient overlay */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={getImageUrl(item.backdrop_path || item.poster_path, "original") || "/placeholder.svg"}
-          alt={item.title || item.name}
-          className="w-full h-full object-cover"
+        <LazyImage
+          src={getImageUrl(item.backdrop_path || item.poster_path, "original")}
+          alt={item.title || item.name || "Media backdrop"}
+          className="absolute inset-0 w-full h-full object-cover"
+          eager={true}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent z-10" />
       </div>
 
       {/* Content */}
@@ -108,49 +110,50 @@ const MediaHero: React.FC<MediaHeroProps> = ({
             "w-1/2 md:w-1/4 lg:max-w-xs mx-auto md:mx-0 glass-morphism rounded-lg overflow-hidden",
             isMobile ? "max-w-[180px]" : ""
           )}>
-            <img
-              src={getImageUrl(item.poster_path, "w500") || "/placeholder.svg"}
-              alt={item.title || item.name}
-              className="w-full h-full object-cover"
+            <LazyImage
+              src={getImageUrl(item.poster_path, "w500")}
+              alt={item.title || item.name || "Media poster"}
+              aspectRatio="2/3"
+              className="w-full h-full"
             />
           </div>
 
           {/* Details */}
           <div className="max-w-2xl">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient mb-2">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient mb-2 break-words leading-tight">
               {item.title || item.name}
             </h1>
 
             {/* Metadata */}
             <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
-              <span className="glass-morphism px-2 py-1 rounded-md">
+              <span className="glass-morphism px-2 py-1 rounded-md whitespace-nowrap">
                 {item.release_date?.substring(0, 4) ||
                   item.first_air_date?.substring(0, 4) ||
                   "TBA"}
               </span>
 
               {mediaType === "movie" && item.runtime && (
-                <span className="glass-morphism px-2 py-1 rounded-md">
+                <span className="glass-morphism px-2 py-1 rounded-md whitespace-nowrap">
                   {formatRuntime(item.runtime)}
                 </span>
               )}
 
               {item.vote_average > 0 && (
-                <span className="glass-morphism px-2 py-1 rounded-md flex items-center">
+                <span className="glass-morphism px-2 py-1 rounded-md flex items-center whitespace-nowrap">
                   <span className="text-yellow-400">★</span>
                   <span className="ml-1">{item.vote_average.toFixed(1)}</span>
                 </span>
               )}
 
               {item.genres.slice(0, isMobile ? 2 : undefined).map((genre) => (
-                <span key={genre.id} className="glass-morphism px-2 py-1 rounded-md">
+                <span key={genre.id} className="glass-morphism px-2 py-1 rounded-md whitespace-nowrap">
                   {genre.name}
                 </span>
               ))}
             </div>
 
             {/* Overview */}
-            <p className="text-sm md:text-base opacity-90 mb-4 md:mb-6 line-clamp-3 md:line-clamp-none">
+            <p className="text-sm md:text-base opacity-90 mb-4 md:mb-6 line-clamp-3 md:line-clamp-none break-words leading-relaxed">
               {item.overview}
             </p>
 

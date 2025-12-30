@@ -4,6 +4,58 @@
 ## Project Overview
 Build a modern, responsive movie and TV show streaming platform called "Lumina" using React, TypeScript, Vite, and Tailwind CSS. The application should provide a Netflix-like experience with multiple streaming servers, watchlist functionality, and a beautiful glass-morphism UI design.
 
+## Setup Instructions
+
+### Prerequisites
+- Node.js 18+ and npm/yarn/pnpm
+- TMDB API key ([Get one here](https://www.themoviedb.org/settings/api))
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone <repository-url>
+cd Lumina
+```
+
+2. Install dependencies
+```bash
+npm install
+```
+
+3. Create a `.env` file in the root directory
+```bash
+cp .env.example .env
+```
+
+4. Add your TMDB API key to `.env`
+```
+VITE_TMDB_API_KEY=your_api_key_here
+```
+
+5. Start the development server
+```bash
+npm run dev
+```
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run test` - Run tests with Vitest
+- `npm run test:ui` - Run tests with UI
+- `npm run test:coverage` - Run tests with coverage report
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following:
+
+```
+VITE_TMDB_API_KEY=your_tmdb_api_key_here
+```
+
 ## Core Features & Pages
 
 ### 1. Home Page (`/`)
@@ -60,7 +112,7 @@ Build a modern, responsive movie and TV show streaming platform called "Lumina" 
 
 ### API Integration
 - **TMDB API**: The Movie Database API for all content
-- **API Key**: `08c748f7d51cbcbf3189168114145568`
+- **API Key**: Configured via environment variable `VITE_TMDB_API_KEY`
 - **Endpoints Used**:
   - Trending content (`/trending/{media_type}/{time_window}`)
   - Popular movies (`/movie/popular`)
@@ -117,11 +169,32 @@ Implement multiple streaming server options with embedded players:
 - **GenreFilter**: Dropdown for genre-based filtering
 - **SearchBar**: Global search functionality
 - **Navbar**: Responsive navigation with mobile bottom navigation
+- **LazyImage**: Optimized image component with lazy loading
+- **Skeleton**: Loading skeleton components
 
 #### Glass-Morphism Effects
 - **Backdrop Blur**: `backdrop-blur-xl bg-white/5 border border-white/10`
 - **Shadow Effects**: Custom shadow utilities
 - **Hover Animations**: Scale and translate effects on interaction
+
+### Error Handling
+- **Error Boundaries**: React error boundaries for graceful error handling
+- **Error Handler Utility**: Centralized error handling with toast notifications
+- **TMDB Error Types**: Custom error classes for API errors
+- **Network Error Handling**: Proper handling of network failures
+
+### Performance Optimizations
+- **Code Splitting**: Manual chunks for React and UI vendors
+- **Image Optimization**: Lazy loading with Intersection Observer
+- **Lazy Loading**: Suspense boundaries for route-based code splitting
+- **Caching**: TanStack Query for API response caching
+- **Loading Skeletons**: Better UX during data fetching
+
+### Testing
+- **Vitest**: Fast unit testing framework
+- **React Testing Library**: Component testing utilities
+- **Test Coverage**: Coverage reports with Vitest coverage
+- **Test Utilities**: Custom test utilities for component testing
 
 ### Responsive Design
 - **Mobile-First**: Optimized for mobile devices with touch interactions
@@ -129,13 +202,6 @@ Implement multiple streaming server options with embedded players:
 - **Navigation**: Desktop top navigation, mobile bottom navigation
 - **Touch Gestures**: Swipe-friendly horizontal scrolling
 - **Safe Areas**: iOS safe area handling for modern devices
-
-### Performance Optimizations
-- **Code Splitting**: Manual chunks for React and UI vendors
-- **Image Optimization**: TMDB image URLs with appropriate sizes
-- **Lazy Loading**: Suspense boundaries for route-based code splitting
-- **Caching**: TanStack Query for API response caching
-- **Error Boundaries**: Graceful error handling throughout the app
 
 ## Development Setup
 
@@ -157,6 +223,14 @@ Implement multiple streaming server options with embedded players:
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.5.2",
     "next-themes": "^0.4.6"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/jest-dom": "^6.5.0",
+    "@vitest/ui": "^2.1.8",
+    "@vitest/coverage-v8": "^2.1.8",
+    "vitest": "^2.1.8",
+    "jsdom": "^25.0.1"
   }
 }
 ```
@@ -172,7 +246,7 @@ Full shadcn/ui component library integration with all Radix UI primitives for:
 
 ### Build Configuration
 - **Vite**: Fast build tool with React SWC plugin
-- **TypeScript**: Full type safety throughout the application
+- **TypeScript**: Full type safety with strict mode enabled
 - **Tailwind CSS**: Utility-first CSS framework with custom animations
 - **ESLint**: Code linting with React-specific rules
 - **Path Aliases**: `@/` alias for clean imports
@@ -190,7 +264,9 @@ src/
 ├── lib/             # Utility functions
 ├── pages/           # Route components
 ├── services/        # API services (TMDB, watchlist)
-└── styles/          # Global CSS
+├── styles/          # Global CSS
+├── test/            # Test utilities and setup
+└── utils/           # Error handling utilities
 ```
 
 ## Key Features Implementation
@@ -224,16 +300,17 @@ src/
 
 ## Deployment & Production
 - **Vercel Configuration**: Optimized for Vercel deployment
-- **Environment Variables**: Secure API key management
+- **Environment Variables**: Secure API key management via `.env`
 - **Build Optimization**: Code splitting and asset optimization
-- **SEO Optimization**: Meta tags and structured data
-- **Error Monitoring**: Production error tracking
+- **Error Monitoring**: Production error tracking with error boundaries
+- **TypeScript Strict Mode**: Enhanced type safety
 
 ## Additional Requirements
 - **Accessibility**: WCAG compliant components
 - **Performance**: Lighthouse score optimization
 - **Cross-browser**: Support for modern browsers
-- **PWA Ready**: Service worker and manifest configuration
-- **Analytics**: User interaction tracking setup
+- **Error Boundaries**: Graceful error handling
+- **Loading States**: Skeleton loaders for better UX
+- **Image Optimization**: Lazy loading with Intersection Observer
 
 This project creates a professional-grade streaming platform with modern web technologies, providing users with a seamless movie and TV show discovery and viewing experience.

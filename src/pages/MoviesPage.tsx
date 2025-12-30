@@ -9,6 +9,7 @@ import {
 import MediaGrid from "@/components/media/MediaGrid";
 import GenreFilter from "@/components/layout/GenreFilter";
 import { toast } from "sonner";
+import { handleError } from "@/utils/errorHandler";
 
 const MoviesPage: React.FC = () => {
   const [movies, setMovies] = useState<MediaItem[]>([]);
@@ -36,8 +37,7 @@ const MoviesPage: React.FC = () => {
         
         setMovies(moviesWithType);
       } catch (error) {
-        console.error("Error fetching movies:", error);
-        toast.error("Failed to load movies");
+        handleError(error, "Failed to load movies");
       } finally {
         setLoading(false);
       }
