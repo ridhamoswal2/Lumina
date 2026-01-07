@@ -68,9 +68,9 @@ const ServerSelector: React.FC<ServerSelectorProps> = ({
       id: 4,
       getUrl: () => {
         if (mediaType === "movie") {
-          return `https://anyembed.xyz/movie/${item.id}?server=${3}`;
+          return `https://www.vidking.net/embed/movie/${item.id}`;
         } else {
-          return `https://anyembed.xyz/tv/${item.id}/${season}/${episode}?server=${4}`;
+          return `https://www.vidking.net/embed/tv/${item.id}/${season}/${episode}`;
         }
       },
     },
@@ -78,9 +78,9 @@ const ServerSelector: React.FC<ServerSelectorProps> = ({
       id: 5,
       getUrl: () => {
         if (mediaType === "movie") {
-          return `https://www.2embed.stream/embed/movie/${item.id}`;
+          return `https://player.vidzee.wtf/embed/movie/${item.id}`;
         } else {
-          return `https://vidsrc.me/embed/tv/${item.id}/${season}/${episode}?server=${4}`;
+          return `https://player.vidzee.wtf/embed/tv/${item.id}/${season}/${episode}`;
         }
       },
     },
