@@ -48,9 +48,9 @@ const ServerSelector: React.FC<ServerSelectorProps> = ({
       id: 2,
       getUrl: () => {
         if (mediaType === "movie") {
-          return `https://vidsrc.xyz/embed/movie/${item.id}`;
+          return `https://rivestream.org/embed?type=movie&id=${item.id}`;
         } else {
-          return `https://vidsrc.xyz/embed/tv/${item.id}/${season}/${episode}`;
+          return `https://rivestream.org/embed?type=tv&id=${item.id}&season=${season}&episode=${episode}`;
         }
       },
     },
