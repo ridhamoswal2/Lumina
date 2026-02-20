@@ -64,10 +64,14 @@ export interface Genre {
   name: string;
 }
 
-// Helper function to fetch data from the TMDB API
-const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string>): Promise<T> => {
+// Helper function to fetch data from the TMDB API with timeout
+const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string>, timeoutMs: number = 10000): Promise<T> => {
   if (!API_KEY) {
-    throw new Error("TMDB API key is not configured. Please set VITE_TMDB_API_KEY in your .env file.");
+    throw new TMDBError(
+      "TMDB API key is not configured. Please set VITE_TMDB_API_KEY in your .env file.",
+      undefined,
+      "MISSING_API_KEY"
+    );
   }
 
   const queryParams = new URLSearchParams({
@@ -75,8 +79,15 @@ const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string
     ...params,
   });
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}?${queryParams}`);
+    const response = await fetch(`${BASE_URL}${endpoint}?${queryParams}`, {
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -100,6 +111,13 @@ const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string
           "NOT_FOUND"
         );
       }
+      if (response.status >= 500) {
+        throw new TMDBError(
+          "The movie database service is temporarily unavailable. Please try again later.",
+          response.status,
+          "SERVICE_UNAVAILABLE"
+        );
+      }
       throw new TMDBError(
         `TMDB API Error: ${response.status} - ${response.statusText}`,
         response.status,
@@ -109,16 +127,32 @@ const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string
 
     return response.json();
   } catch (error) {
+    clearTimeout(timeoutId);
+
     if (error instanceof TMDBError) {
       throw error;
     }
-    if (error instanceof TypeError && error.message.includes("fetch")) {
+
+    // Handle timeout
+    if (error instanceof Error && error.name === "AbortError") {
       throw new TMDBError(
-        "Network error. Please check your internet connection.",
+        "Request timeout. The server is taking too long to respond. Please check your internet connection.",
         undefined,
-        "NETWORK_ERROR"
+        "TIMEOUT_ERROR"
       );
     }
+
+    // Handle network errors
+    if (error instanceof TypeError) {
+      if (error.message.includes("fetch") || error.message.includes("NetworkError")) {
+        throw new TMDBError(
+          "Network error. Please check your internet connection and try again.",
+          undefined,
+          "NETWORK_ERROR"
+        );
+      }
+    }
+
     throw new TMDBError(
       error instanceof Error ? error.message : "Unknown error occurred",
       undefined,

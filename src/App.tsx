@@ -4,9 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MediaProvider } from "./contexts/MediaContext";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import LoadingScreen from "./components/ui/loading";
 import ErrorBoundary from "./components/ErrorBoundary";
+import NetworkErrorRecovery from "./components/NetworkErrorRecovery";
 import Navbar from "./components/layout/Navbar";
 import HomePage from "./pages/HomePage";
 import MoviesPage from "./pages/MoviesPage";
@@ -21,11 +22,15 @@ import { useIsMobile } from "./hooks/use-mobile";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
+      retry: 3, // Increased retry attempts
       staleTime: 300000, // 5 minutes
+      gcTime: 600000, // 10 minutes (formerly cacheTime)
       refetchOnMount: true,
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
+      // Better error handling
+      throwOnError: false,
+      networkMode: "always",
     },
   },
 });
@@ -53,15 +58,33 @@ const AppContent = () => {
   );
 };
 
+const AppWithErrorRecovery = () => {
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetry = () => {
+    setIsRetrying(true);
+    // Clear all queries and refetch
+    queryClient.clear();
+    // Force a page reload to reset all state
+    window.location.reload();
+  };
+
+  return (
+    <ErrorBoundary fallback={<NetworkErrorRecovery onRetry={handleRetry} isRetrying={isRetrying} />}>
+      <Suspense fallback={<LoadingScreen />}>
+        <AppContent />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <MediaProvider>
           <ErrorBoundary>
-            <Suspense fallback={<LoadingScreen />}>
-              <AppContent />
-            </Suspense>
+            <AppWithErrorRecovery />
           </ErrorBoundary>
           <Sonner />
           <Toaster />

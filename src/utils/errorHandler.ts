@@ -14,6 +14,7 @@ export class TMDBError extends Error {
   ) {
     super(message);
     this.name = "TMDBError";
+    Object.setPrototypeOf(this, TMDBError.prototype);
   }
 }
 
@@ -24,9 +25,14 @@ export const handleError = (error: unknown, context?: string): void => {
   if (error instanceof TMDBError) {
     errorMessage = error.message;
     
-    // Don't show toast for certain error types
+    // Don't show toast for certain error types that are handled elsewhere
     if (error.statusCode === 404) {
       shouldShowToast = false; // Handle 404s silently in UI
+    }
+    
+    // Log specific error codes for debugging
+    if (error.code === "TIMEOUT_ERROR" || error.code === "NETWORK_ERROR") {
+      console.warn(`Network issue detected: ${error.code} - ${error.message}`);
     }
   } else if (error instanceof Error) {
     errorMessage = error.message;
