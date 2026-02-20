@@ -29,14 +29,9 @@ const HomePage: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch all data in parallel
-        const [
-          trendingRes,
-          popularMoviesRes,
-          popularTVRes,
-          topRatedMoviesRes,
-          nowPlayingRes
-        ] = await Promise.all([
+        // Fetch all data in parallel with individual error handling
+        // This allows sections to load independently even if one fails
+        const results = await Promise.allSettled([
           getTrending("all", "day"),
           getPopularMovies(),
           getPopularTVShows(),
@@ -44,19 +39,54 @@ const HomePage: React.FC = () => {
           getNowPlayingMovies()
         ]);
 
-        // Set featured item from trending
-        if (trendingRes.results.length > 0) {
-          // Pick a random trending item with a backdrop
-          const filteredItems = trendingRes.results.filter(item => item.backdrop_path);
-          const randomIndex = Math.floor(Math.random() * Math.min(5, filteredItems.length));
-          setFeaturedItem(filteredItems[randomIndex] || trendingRes.results[0]);
+        // Handle each result individually
+        if (results[0].status === "fulfilled") {
+          const trendingRes = results[0].value;
+          if (trendingRes.results.length > 0) {
+            const filteredItems = trendingRes.results.filter(item => item.backdrop_path);
+            const randomIndex = Math.floor(Math.random() * Math.min(5, filteredItems.length));
+            setFeaturedItem(filteredItems[randomIndex] || trendingRes.results[0]);
+          }
+          setTrending(trendingRes.results);
+        } else {
+          console.error("Failed to load trending:", results[0].reason);
+          setTrending([]);
         }
 
-        setTrending(trendingRes.results);
-        setPopularMovies(popularMoviesRes.results);
-        setPopularTVShows(popularTVRes.results);
-        setTopRatedMovies(topRatedMoviesRes.results);
-        setNowPlaying(nowPlayingRes.results);
+        if (results[1].status === "fulfilled") {
+          setPopularMovies(results[1].value.results);
+        } else {
+          console.error("Failed to load popular movies:", results[1].reason);
+          setPopularMovies([]);
+        }
+
+        if (results[2].status === "fulfilled") {
+          setPopularTVShows(results[2].value.results);
+        } else {
+          console.error("Failed to load popular TV shows:", results[2].reason);
+          setPopularTVShows([]);
+        }
+
+        if (results[3].status === "fulfilled") {
+          setTopRatedMovies(results[3].value.results);
+        } else {
+          console.error("Failed to load top rated movies:", results[3].reason);
+          setTopRatedMovies([]);
+        }
+
+        if (results[4].status === "fulfilled") {
+          setNowPlaying(results[4].value.results);
+        } else {
+          console.error("Failed to load now playing:", results[4].reason);
+          setNowPlaying([]);
+        }
+
+        // Show error only if none of the requests succeeded
+        const allFailed = results.every(result => result.status === "rejected");
+        if (allFailed) {
+          const error = results[0].status === "rejected" ? results[0].reason : new Error("Failed to load content");
+          handleError(error, "Failed to load home content");
+        }
       } catch (error) {
         handleError(error, "Failed to load home content");
       } finally {

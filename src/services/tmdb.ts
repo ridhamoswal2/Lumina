@@ -65,7 +65,13 @@ export interface Genre {
 }
 
 // Helper function to fetch data from the TMDB API with timeout
-const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string>, timeoutMs: number = 10000): Promise<T> => {
+const fetchFromTMDB = async <T>(
+  endpoint: string,
+  params?: Record<string, string>,
+  timeoutMs: number = 30000,
+  retryCount: number = 0,
+  maxRetries: number = 2
+): Promise<T> => {
   if (!API_KEY) {
     throw new TMDBError(
       "TMDB API key is not configured. Please set VITE_TMDB_API_KEY in your .env file.",
@@ -85,6 +91,9 @@ const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string
   try {
     const response = await fetch(`${BASE_URL}${endpoint}?${queryParams}`, {
       signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     clearTimeout(timeoutId);
@@ -130,26 +139,50 @@ const fetchFromTMDB = async <T>(endpoint: string, params?: Record<string, string
     clearTimeout(timeoutId);
 
     if (error instanceof TMDBError) {
+      // Retry on network errors and timeouts
+      if (
+        retryCount < maxRetries &&
+        (error.code === "NETWORK_ERROR" || error.code === "TIMEOUT_ERROR")
+      ) {
+        const delayMs = Math.pow(2, retryCount) * 1000;
+        console.log(`Retrying API call after ${delayMs}ms (attempt ${retryCount + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        return fetchFromTMDB(endpoint, params, timeoutMs, retryCount + 1, maxRetries);
+      }
       throw error;
     }
 
     // Handle timeout
     if (error instanceof Error && error.name === "AbortError") {
-      throw new TMDBError(
+      const timeoutError = new TMDBError(
         "Request timeout. The server is taking too long to respond. Please check your internet connection.",
         undefined,
         "TIMEOUT_ERROR"
       );
+      if (retryCount < maxRetries) {
+        const delayMs = Math.pow(2, retryCount) * 1000;
+        console.log(`Retrying after timeout: ${delayMs}ms (attempt ${retryCount + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        return fetchFromTMDB(endpoint, params, timeoutMs, retryCount + 1, maxRetries);
+      }
+      throw timeoutError;
     }
 
     // Handle network errors
     if (error instanceof TypeError) {
       if (error.message.includes("fetch") || error.message.includes("NetworkError")) {
-        throw new TMDBError(
+        const networkError = new TMDBError(
           "Network error. Please check your internet connection and try again.",
           undefined,
           "NETWORK_ERROR"
         );
+        if (retryCount < maxRetries) {
+          const delayMs = Math.pow(2, retryCount) * 1000;
+          console.log(`Retrying after network error: ${delayMs}ms (attempt ${retryCount + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          return fetchFromTMDB(endpoint, params, timeoutMs, retryCount + 1, maxRetries);
+        }
+        throw networkError;
       }
     }
 

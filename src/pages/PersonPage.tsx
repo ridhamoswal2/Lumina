@@ -21,13 +21,24 @@ const PersonPage: React.FC = () => {
 
       try {
         setLoading(true);
-        const [personData, creditsData] = await Promise.all([
+        const results = await Promise.allSettled([
           getPersonDetails(parseInt(id)),
           getPersonCredits(parseInt(id))
         ]);
 
-        setPerson(personData);
-        setCredits(creditsData);
+        if (results[0].status === "fulfilled") {
+          setPerson(results[0].value);
+        } else {
+          console.error("Failed to load person details:", results[0].reason);
+          handleError(results[0].reason, "Failed to load person details");
+        }
+
+        if (results[1].status === "fulfilled") {
+          setCredits(results[1].value);
+        } else {
+          console.error("Failed to load person credits:", results[1].reason);
+          setCredits(null);
+        }
       } catch (error) {
         handleError(error, "Failed to load person details");
       } finally {

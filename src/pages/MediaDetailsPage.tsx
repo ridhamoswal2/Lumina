@@ -41,14 +41,27 @@ const MediaDetailsPage: React.FC = () => {
         setLoading(true);
         console.log(`Fetching details for ${mediaType} with ID: ${id}`);
         
-        const [detailsData, recommendationsData] = await Promise.all([
+        const results = await Promise.allSettled([
           getMediaDetails(mediaType as MediaType, parseInt(id)),
           getRecommendations(mediaType as MediaType, parseInt(id))
         ]);
         
-        console.log("Details data received:", detailsData);
-        setItem(detailsData);
-        setRecommendations(recommendationsData.results);
+        // Handle details
+        if (results[0].status === "fulfilled") {
+          console.log("Details data received:", results[0].value);
+          setItem(results[0].value);
+        } else {
+          console.error("Failed to load media details:", results[0].reason);
+          handleError(results[0].reason, "Failed to load media details");
+        }
+
+        // Handle recommendations
+        if (results[1].status === "fulfilled") {
+          setRecommendations(results[1].value.results);
+        } else {
+          console.error("Failed to load recommendations:", results[1].reason);
+          setRecommendations([]);
+        }
 
         // Fetch seasons for TV shows
         if (mediaType === "tv") {

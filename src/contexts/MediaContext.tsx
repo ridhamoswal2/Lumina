@@ -35,16 +35,40 @@ export const MediaProvider = ({ children }: { children: ReactNode }) => {
           setLoadingGenres(false);
         }
         
-        // Fetch fresh data regardless of cache
-        const [movieGenres, tvGenres] = await Promise.all([
+        // Fetch fresh data regardless of cache with individual error handling
+        const results = await Promise.allSettled([
           getGenres("movie"),
           getGenres("tv")
         ]);
         
-        const newGenres = {
-          movie: movieGenres.genres,
-          tv: tvGenres.genres
+        const newGenres: Record<MediaType, Genre[]> = {
+          movie: [],
+          tv: []
         };
+
+        if (results[0].status === "fulfilled") {
+          newGenres.movie = results[0].value.genres;
+        } else {
+          console.error("Failed to load movie genres:", results[0].reason);
+          // Try to use cached data or empty array
+          const cachedGenres = localStorage.getItem('genres');
+          if (cachedGenres) {
+            const parsed = JSON.parse(cachedGenres);
+            newGenres.movie = parsed.movie || [];
+          }
+        }
+
+        if (results[1].status === "fulfilled") {
+          newGenres.tv = results[1].value.genres;
+        } else {
+          console.error("Failed to load TV genres:", results[1].reason);
+          // Try to use cached data or empty array
+          const cachedGenres = localStorage.getItem('genres');
+          if (cachedGenres) {
+            const parsed = JSON.parse(cachedGenres);
+            newGenres.tv = parsed.tv || [];
+          }
+        }
         
         // Update state and cache
         setGenres(newGenres);
